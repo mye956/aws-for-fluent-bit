@@ -1,0 +1,38 @@
+# .github/workflows/lambda-triggered.yml
+name: Lambda Triggered Workflow
+
+on:
+  repository_dispatch:
+    types: [lambda-trigger]
+
+jobs:
+  lambda-triggered-job:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Print trigger information
+      run: |
+        echo "Workflow triggered by Lambda function"
+        echo "Event type: ${{ github.event.action }}"
+        echo "Client payload: ${{ toJson(github.event.client_payload) }}"
+        
+    - name: Process client payload
+      if: github.event.client_payload != null
+      run: |
+        echo "Processing custom payload data..."
+        # Access specific payload data like:
+        # echo "Custom field: ${{ github.event.client_payload.custom_field }}"
+        
+    - name: Run your custom logic
+      run: |
+        echo "Running your custom workflow logic here..."
+        # Add your actual workflow steps here
+        # Examples:
+        # - Build and test code
+        # - Deploy applications
+        # - Run scripts
+        # - Send notifications
+        - echo "this is Mike's testing github action"
