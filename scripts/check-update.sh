@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+cleanup() {
+    # Clean up the pulled image
+    docker rmi public.ecr.aws/amazonlinux/amazonlinux:2
+}
+
+trap cleanup EXIT
+
 # Pull AL2 image from public ECR
 docker pull public.ecr.aws/amazonlinux/amazonlinux:2
 
@@ -19,6 +26,5 @@ else
     echo "There is a new base amazon linux image"
 fi
 
-# Clean up the pulled image
-docker rmi public.ecr.aws/amazonlinux/amazonlinux:2
+
 
