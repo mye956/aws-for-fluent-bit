@@ -2,17 +2,69 @@ name: GitHub Actions Demo
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on: [push]
 jobs:
-  Explore-GitHub-Actions:
+  GenerateConfig:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-      - name: Check out repository code
-        uses: actions/checkout@v5
-      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
-      - name: List files in the repository
-        run: |
-          ls ${{ github.workspace }}
-      - run: echo "🍏 This job's status is ${{ job.status }}."
+      - name: Check AL2 Update
+        run: ./scripts/check-update.sh
+
+    # outputs:
+    #   stage_exit_code: ${{ steps.stage.outputs.stage_exit_code }}
+    #   push_exit_code: ${{ steps.push.outputs.push_exit_code }}
+    #   pr_exit_code: ${{ steps.pr.outputs.pr_exit_code }}
+    # permissions:
+    #   id-token: write
+    #   contents: write
+    #   pull-requests: write
+    # env:
+    #   IAM_INSTANCE_PROFILE_ARN: ${{ secrets.IAM_INSTANCE_PROFILE_ARN }}
+    #   GH_TOKEN: ${{ github.token }}
+    # steps:
+    # - name: Checkout
+    #   uses: actions/checkout@v5
+    # - name: Create Release Branch
+    #   run: |
+    #     date=$(date '+%Y%m%d')
+    #     git checkout -b release-${date}
+    # - name: Install xmllint
+    #   run: |
+    #     # generate-release-vars.sh depends on these packages
+    #     sudo apt-get update && sudo apt-get install libxml2-utils
+    # - name: Configure AWS Credentials
+    #   uses: aws-actions/configure-aws-credentials@v5
+    #   with:
+    #     role-to-assume: ${{ secrets.AMI_GENERATE_CONFIG_ROLE }}
+    #     aws-region: us-west-2
+    # - name: Configure Bot Alias
+    #   run: |
+    #     git config --global user.name "GenerateConfig Action"
+    #     git config --global user.email "gcaction@github.com"
+    # - name: Check AL2 Update
+    #   run: ./scripts/check-update.sh al2
+    # - name: Check AL2023 Update
+    #   run: ./scripts/check-update.sh al2023
+    # - name: Check for changes
+    #   id: stage
+    #   run: |
+    #     # Git diff returns exit code of 1 when there is a change staged
+    #     # We need the set statements to prevent erroring out
+    #     set +e
+    #     git diff --cached --quiet
+    #     echo "stage_exit_code=$?" >> "$GITHUB_OUTPUT"
+    #     set -e
+    # - name: Commit and Push Changes
+    #   id: push
+    #   if: ${{ steps.stage.outputs.stage_exit_code == 1 }}
+    #   run: |
+    #     date=$(date '+%Y%m%d')
+    #     git commit -m "Release ${date}"
+    #     git status
+    #     git push --set-upstream origin release-${date}
+    #     echo "push_exit_code=$?" >> "$GITHUB_OUTPUT"
+    # - name: Open PR for Branch
+    #   id: pr
+    #   if: ${{ steps.stage.outputs.stage_exit_code == 1 && steps.push.outputs.push_exit_code == 0 }}
+    #   run: |
+    #     date=$(date '+%Y%m%d')
+    #     gh pr create --base main --head release-${date} --title "Release ${date}" --body "Enhanced ECS Optimized AMI Release changes"
+    #     echo "pr_exit_code=$?" >> "$GITHUB_OUTPUT"

@@ -1,0 +1,1 @@
+public.ecr.aws/amazonlinux/amazonlinux@sha256:bc2ec600772d96f4306de7ea7ead1e321ebe3ddecbcc28acecad7c5f11bf31dc
