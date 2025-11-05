@@ -5,6 +5,8 @@ jobs:
   GenerateConfig:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v5
       - name: Check AL2 Update
         run: ./scripts/check-update.sh
 
