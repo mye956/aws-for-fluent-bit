@@ -30,6 +30,7 @@ for i in $(jq 'keys[]' linux.version); do
         echo "There is a new base amazon linux image for $tag. Updating linux.version"
         jq ".[$i].linux.\"amazon-linux-sha\" = \"$IMAGE_SHA\"" linux.version > tmp.json && mv tmp.json linux.version
 
+        git status
         git add linux.version
     fi 
 done
