@@ -11,6 +11,7 @@
       "cloudwatch-plugin": "v1.9.4",
       "al-tag": "2",
       "flb-repository": "https://github.com/amazon-contributing/upstream-to-fluent-bit.git",
+      "amazon-linux-sha": "public.ecr.aws/amazonlinux/amazonlinux@sha256:bc2ec600772d96f4306de7ea7ead1e321ebe3ddecbcc28acecad7c5f11bf31dc",
       "publish": "true"
     }
   },
@@ -26,6 +27,7 @@
       "cloudwatch-plugin": "v1.9.4",
       "al-tag": "2023",
       "flb-repository": "https://github.com/fluent/fluent-bit.git",
+      "amazon-linux-sha": "public.ecr.aws/amazonlinux/amazonlinux@sha256:bc2ec600772d96f4306de7ea7ead1e321ebe3ddecbcc28acecad7c5f11bf31dc",
       "publish": "false"
     }
   }

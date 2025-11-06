@@ -4,30 +4,46 @@ set -euo pipefail
 cleanup() {
     # Clean up the pulled image
     docker rmi public.ecr.aws/amazonlinux/amazonlinux:2
+    docker rmi public.ecr.aws/amazonlinux/amazonlinux:2023
 }
 
 trap cleanup EXIT
 
-# Pull AL2 image from public ECR
-docker pull public.ecr.aws/amazonlinux/amazonlinux:2
-if [[ $? -ne 0 ]]; then
-    echo "ERROR: Unable to pull Amazon Linux 2 image"
-fi
+jq -c '.[]' ../linux.version | while read -r entry; do
+    echo "$entry" | jq '.linux'
+    sha=$(echo "$entry" | jq -r '.linux."amazon-linux-sha" // empty')
+    tag=$(echo "$entry" | jq -r '.linux."al-tag"')
+    if [[ -z "$sha" ]]; then
+        echo "ERROR: Can't parse sha in linux.version"
+        exit 1
+    fi
 
-# Get image SHA
-IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/amazonlinux/amazonlinux:2)
+    if [[ -z "$tag" ]]; then
+        echo "ERROR: Can't parse tag in linux.version"
+        exit 1
+    fi
 
-echo "Image SHA: $IMAGE_SHA"
+    echo "Extracted SHA: $sha"
+    echo "Extracted tag: $tag"
 
-CURRENT_IMAGE_SHA=$(head -n 1 ./dummy.txt)
+    # Pull AL2 image from public ECR
+    docker pull "public.ecr.aws/amazonlinux/amazonlinux:$tag"
 
-echo "Current image SHA: $CURRENT_IMAGE_SHA"
+    # Get image SHA
+    IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/amazonlinux/amazonlinux:2)
 
-if [[ "$IMAGE_SHA" == "$CURRENT_IMAGE_SHA" ]]; then
-    echo "No new base amazon linux image"
-else 
-    echo "There is a new base amazon linux image"
-fi
+    echo "Image SHA: $IMAGE_SHA"
+
+    CURRENT_IMAGE_SHA=$(head -n 1 ../dummy.txt)
+
+    echo "Current image SHA: $sha"
+
+    if [[ "$IMAGE_SHA" == "$sha" ]]; then
+        echo "No new base amazon linux image"
+    else 
+        echo "There is a new base amazon linux image"
+    fi
+done
 
 
 
