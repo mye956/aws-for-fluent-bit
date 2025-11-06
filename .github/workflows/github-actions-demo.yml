@@ -37,6 +37,7 @@ jobs:
         if: ${{ steps.stage.outputs.stage_exit_code == 1 }}
         run: |
           date=$(date '+%Y%m%d')
+          git status
           git commit -m "Release ${date}"
           git status
           git push --set-upstream origin release-${date}
