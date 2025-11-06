@@ -4,11 +4,50 @@ on: [push]
 jobs:
   GenerateConfig:
     runs-on: ubuntu-latest
+    outputs:
+      stage_exit_code: ${{ steps.stage.outputs.stage_exit_code }}
+      push_exit_code: ${{ steps.push.outputs.push_exit_code }}
+      pr_exit_code: ${{ steps.pr.outputs.pr_exit_code }}
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+      - name: Create Release Branch
+        run: |
+          date=$(date '+%Y%m%d')
+          git checkout -b release-${date}
+      - name: Configure Bot Alias
+        run: |
+          git config --global user.name "GenerateConfig Action"
+          git config --global user.email "gcabot@github.com"
       - name: Check AL2 Update
         run: ./scripts/check-update.sh
+      - name: Check for changes
+        id: stage
+        run: |
+          # Git diff returns exit code of 1 when there is a change staged
+          # We need the set statements to prevent erroring out
+          set +e
+          git diff --cached --quiet
+          echo "stage_exit_code=$?" >> "$GITHUB_OUTPUT"
+          set -e
+      - name: Commit and Push Changes
+        id: push
+        if: ${{ steps.stage.outputs.stage_exit_code == 1 }}
+        run: |
+          date=$(date '+%Y%m%d')
+          git commit -m "Release ${date}"
+          git status
+          git push --set-upstream origin release-${date}
+          echo "push_exit_code=$?" >> "$GITHUB_OUTPUT"
+      - name: Open PR for Branch
+        id: pr
+        if: ${{ steps.stage.outputs.stage_exit_code == 1 && steps.push.outputs.push_exit_code == 0 }}
+        run: |
+          date=$(date '+%Y%m%d')
+          gh pr create --base master --head release-${date} --title "Release ${date}" --body "Dummy Release PR"
+          echo "pr_exit_code=$?" >> "$GITHUB_OUTPUT"
 
     # outputs:
     #   stage_exit_code: ${{ steps.stage.outputs.stage_exit_code }}
