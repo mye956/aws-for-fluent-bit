@@ -47,7 +47,7 @@ jobs:
         if: ${{ steps.stage.outputs.stage_exit_code == 1 && steps.push.outputs.push_exit_code == 0 }}
         run: |
           date=$(date '+%Y%m%d')
-          gh pr create --base mainline --head release-${date} --title "Release ${date}" --body "Dummy Release PR"
+          gh pr create --base github-actions --head release-${date} --title "Release ${date}" --body "Dummy Release PR"
           echo "pr_exit_code=$?" >> "$GITHUB_OUTPUT"
 
     # outputs:
