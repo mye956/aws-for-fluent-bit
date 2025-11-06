@@ -11,6 +11,8 @@ trap cleanup EXIT
 
 echo "Before: $(cat linux.version)"
 
+update="false"
+
 # Get indices and iterate
 for i in $(jq 'keys[]' linux.version); do
     current_sha=$(jq -r ".[$i].linux.\"amazon-linux-sha\"" linux.version)
@@ -29,15 +31,17 @@ for i in $(jq 'keys[]' linux.version); do
         # Modify specific index
         echo "There is a new base amazon linux image for $tag. Updating linux.version"
         jq ".[$i].linux.\"amazon-linux-sha\" = \"$IMAGE_SHA\"" linux.version > tmp.json && mv tmp.json linux.version
-
-        git status
-        git add linux.version
+        update="true"
     fi 
 done
 
 echo "After: $(cat linux.version)"
 
 
+if [[ "$update" = "true" ]]; then
+    git status
+    git add linux.version
+fi
 
 # jq -c '.[]' ./linux.version | while read -r entry; do
 #     echo "$entry" | jq '.linux'
