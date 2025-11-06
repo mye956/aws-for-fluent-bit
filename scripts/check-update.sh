@@ -33,9 +33,6 @@ jq -c '.[]' ./linux.version | while read -r entry; do
     IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/amazonlinux/amazonlinux:2)
 
     echo "Image SHA: $IMAGE_SHA"
-
-    CURRENT_IMAGE_SHA=$(head -n 1 ../dummy.txt)
-
     echo "Current image SHA: $sha"
 
     if [[ "$IMAGE_SHA" == "$sha" ]]; then
