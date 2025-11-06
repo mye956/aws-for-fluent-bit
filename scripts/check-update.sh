@@ -41,6 +41,8 @@ echo "After: $(cat linux.version)"
 if [[ "$update" = "true" ]]; then
     git status
     git add linux.version
+    echo "added linux.version"
+    git status
 fi
 
 # jq -c '.[]' ./linux.version | while read -r entry; do
