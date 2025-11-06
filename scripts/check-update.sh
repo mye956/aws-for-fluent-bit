@@ -10,6 +10,9 @@ trap cleanup EXIT
 
 # Pull AL2 image from public ECR
 docker pull public.ecr.aws/amazonlinux/amazonlinux:2
+if [[ $? -ne 0 ]]; then
+    echo "ERROR: Unable to pull Amazon Linux 2 image"
+fi
 
 # Get image SHA
 IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/amazonlinux/amazonlinux:2)
