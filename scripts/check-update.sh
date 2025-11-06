@@ -9,7 +9,7 @@ cleanup() {
 
 trap cleanup EXIT
 
-jq -c '.[]' ../linux.version | while read -r entry; do
+jq -c '.[]' ./linux.version | while read -r entry; do
     echo "$entry" | jq '.linux'
     sha=$(echo "$entry" | jq -r '.linux."amazon-linux-sha" // empty')
     tag=$(echo "$entry" | jq -r '.linux."al-tag"')
