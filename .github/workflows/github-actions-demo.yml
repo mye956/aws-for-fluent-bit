@@ -59,21 +59,16 @@ jobs:
       steps:
       - name: Checkout
         uses: actions/checkout@v5
+      - name: Create Release Branch
+        run: |
+          date=$(date '+%Y%m%d')
+          git checkout -b release-${date}
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{secrets.TEST_IAM_ROLE_ARN}}
-          aws-region: us-west-2
-      # - name: Failure Scenario
-      #   if: ${{ needs.GenerateConfig.result == 'failure' }}
-      #   run: aws cloudwatch put-metric-data --metric-name EcsAmiGithubActionStatus --namespace ECSAMIRelease --value "-1"
-      # - name: Release Kickoff Scenario
-      #   if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 1 }}
-      #   run: aws cloudwatch put-metric-data --metric-name EcsAmiGithubActionStatus --namespace ECSAMIRelease --value 1
-      # - name: No Release Scenario
-      #   if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 0 }}
-      #   run: aws cloudwatch put-metric-data --metric-name EcsAmiGithubActionStatus --namespace ECSAMIRelease --value 0
-        
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: us-west-2 
 
 
     # outputs:
@@ -136,3 +131,13 @@ jobs:
     #     date=$(date '+%Y%m%d')
     #     gh pr create --base main --head release-${date} --title "Release ${date}" --body "Enhanced ECS Optimized AMI Release changes"
     #     echo "pr_exit_code=$?" >> "$GITHUB_OUTPUT"
+
+          # - name: Failure Scenario
+      #   if: ${{ needs.GenerateConfig.result == 'failure' }}
+      #   run: aws cloudwatch put-metric-data --metric-name EcsAmiGithubActionStatus --namespace ECSAMIRelease --value "-1"
+      # - name: Release Kickoff Scenario
+      #   if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 1 }}
+      #   run: aws cloudwatch put-metric-data --metric-name EcsAmiGithubActionStatus --namespace ECSAMIRelease --value 1
+      # - name: No Release Scenario
+      #   if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 0 }}
+      #   run: aws cloudwatch put-metric-data --metric-name EcsAmiGithubActionStatus --namespace ECSAMIRelease --value 0
