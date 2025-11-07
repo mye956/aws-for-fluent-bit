@@ -67,13 +67,13 @@ jobs:
           aws-region: us-west-2
       - name: Failure Scenario
         if: ${{ needs.GenerateConfig.result == 'failure' }}
-        run: aws cloudwatch put-metric-data --metric-name EcsAmiGithubActionStatus --namespace ECSAMIRelease --value "-1"
+        run: aws cloudwatch put-metric-data --metric-name FluentBitReleaseTest --namespace ECSAMIRelease --value "-1"
       - name: Release Kickoff Scenario
         if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 1 }}
-        run: aws cloudwatch put-metric-data --metric-name EcsAmiGithubActionStatus --namespace ECSAMIRelease --value 1
+        run: aws cloudwatch put-metric-data --metric-name FluentBitReleaseTest --namespace ECSAMIRelease --value 1
       - name: No Release Scenario
         if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 0 }}
-        run: aws cloudwatch put-metric-data --metric-name EcsAmiGithubActionStatus --namespace ECSAMIRelease --value 0
+        run: aws cloudwatch put-metric-data --metric-name FluentBitReleaseTest --namespace ECSAMIRelease --value 0
 
     # outputs:
     #   stage_exit_code: ${{ steps.stage.outputs.stage_exit_code }}
@@ -136,12 +136,12 @@ jobs:
     #     gh pr create --base main --head release-${date} --title "Release ${date}" --body "Enhanced ECS Optimized AMI Release changes"
     #     echo "pr_exit_code=$?" >> "$GITHUB_OUTPUT"
 
-          - name: Failure Scenario
-        if: ${{ needs.GenerateConfig.result == 'failure' }}
-        run: aws cloudwatch put-metric-data --metric-name EcsAmiGithubActionStatus --namespace ECSAMIRelease --value "-1"
-      - name: Release Kickoff Scenario
-        if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 1 }}
-        run: aws cloudwatch put-metric-data --metric-name EcsAmiGithubActionStatus --namespace ECSAMIRelease --value 1
-      - name: No Release Scenario
-        if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 0 }}
-        run: aws cloudwatch put-metric-data --metric-name EcsAmiGithubActionStatus --namespace ECSAMIRelease --value 0
+      #     - name: Failure Scenario
+      #   if: ${{ needs.GenerateConfig.result == 'failure' }}
+      #   run: aws cloudwatch put-metric-data --metric-name EcsAmiGithubActionStatus --namespace ECSAMIRelease --value "-1"
+      # - name: Release Kickoff Scenario
+      #   if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 1 }}
+      #   run: aws cloudwatch put-metric-data --metric-name EcsAmiGithubActionStatus --namespace ECSAMIRelease --value 1
+      # - name: No Release Scenario
+      #   if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 0 }}
+      #   run: aws cloudwatch put-metric-data --metric-name EcsAmiGithubActionStatus --namespace ECSAMIRelease --value 0
