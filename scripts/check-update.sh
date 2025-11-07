@@ -32,7 +32,24 @@ for i in $(jq 'keys[]' linux.version); do
         echo "There is a new base amazon linux image for $tag. Updating linux.version"
         jq ".[$i].linux.\"amazon-linux-sha\" = \"$IMAGE_SHA\"" linux.version > tmp.json && mv tmp.json linux.version
         update="true"
-    fi 
+    fi
+
+    curr_fluentbit_version=$(jq -r ".[$i].linux.\"fluent-bit\"" linux.version)
+    next_fluentbit_version=$(jq -r ".[$i].linux.\"release-fluent-bit\"" linux.version)
+    if [[ "$curr_fluentbit_version" -ne "$next_fluentbit_version" ]]; then
+        echo "New fluent bit version upgrade."
+        jq ".[$i].linux.\"fluent-bit\" = \"$next_fluentbit_version\"" linux.version > tmp.json && mv tmp.json linux.version
+        update="true"
+    fi
+
+    curr_aws_fb_version=$(jq -r ".[$i].linux.\"version\"" linux.version)
+    next_aws_fb_version=$(jq -r ".[$i].linux.\"release-version\"" linux.version)
+    if [[ "$curr_aws_fb_version" -ne "$next_aws_fb_version" ]]; then
+        echo "New fluent bit version upgrade."
+        jq ".[$i].linux.\"version\" = \"$next_aws_fb_version\"" linux.version > tmp.json && mv tmp.json linux.version
+        update="true"
+    fi
+
 done
 
 echo "After: $(cat linux.version)"
