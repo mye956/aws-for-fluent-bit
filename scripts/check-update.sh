@@ -38,7 +38,7 @@ for i in $(jq 'keys[]' linux.version); do
     next_fluentbit_version=$(jq -r ".[$i].linux.\"release-fluent-bit\"" linux.version)
     echo "Current fluent bit version: $curr_fluentbit_version"
     echo "Release fluent bit version: $next_fluentbit_version"
-    if [[ "$curr_fluentbit_version" -ne "$next_fluentbit_version" ]]; then
+    if [[ "$curr_fluentbit_version" != "$next_fluentbit_version" ]]; then
         echo "New fluent bit version upgrade."
         jq ".[$i].linux.\"fluent-bit\" = \"$next_fluentbit_version\"" linux.version > tmp.json && mv tmp.json linux.version
         update="true"
@@ -48,7 +48,7 @@ for i in $(jq 'keys[]' linux.version); do
     next_aws_fb_version=$(jq -r ".[$i].linux.\"release-version\"" linux.version)
     echo "Current AWS fluent bit version: $curr_aws_fb_version"
     echo "Release AWS fluent bit version: $next_aws_fb_version"
-    if [[ "$curr_aws_fb_version" -ne "$next_aws_fb_version" ]]; then
+    if [[ "$curr_aws_fb_version" != "$next_aws_fb_version" ]]; then
         echo "New aws fluent bit version upgrade."
         jq ".[$i].linux.\"version\" = \"$next_aws_fb_version\"" linux.version > tmp.json && mv tmp.json linux.version
         update="true"
