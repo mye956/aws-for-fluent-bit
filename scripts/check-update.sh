@@ -1,67 +1,71 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+readonly VERSION_FILE="linux.version"
+readonly ECR_REPO="public.ecr.aws/amazonlinux/amazonlinux"
+
+# List of docker tags that we want to clean up after
+docker_tags=()
+
 cleanup() {
-    # Clean up the pulled image
-    docker rmi public.ecr.aws/amazonlinux/amazonlinux:2
-    docker rmi public.ecr.aws/amazonlinux/amazonlinux:2023
+    for i in "${docker_tags[@]}"; do
+        docker rmi "${ECR_REPO}:$i" || true
+    done
+}
+
+update_json_field() {
+    local key="$1" field="$2" value="$3"
+    jq ".[$key].linux.\"$field\" = \"$value\"" "$VERSION_FILE" > tmp.json && mv tmp.json "$VERSION_FILE"
+}
+
+check_and_update() {
+    local update="false"
+    
+    for i in $(jq 'keys[]' "$VERSION_FILE"); do
+        current_sha=$(jq -r ".[$i].linux.\"amazon-linux-sha\"" "$VERSION_FILE")
+        tag=$(jq -r ".[$i].linux.\"al-tag\"" "$VERSION_FILE")
+
+        if ! docker pull "${ECR_REPO}:$tag"; then
+            echo "Warning: Failed to pull ${ECR_REPO}:$tag" >&2
+            continue
+        fi
+        
+        docker_tags+=("$tag")
+        new_al_sha=$(docker inspect --format='{{index .RepoDigests 0}}' "${ECR_REPO}:$tag")
+        
+        if [[ "$new_al_sha" != "$current_sha" ]]; then
+            echo "New base amazon linux image for $tag. Updating..."
+            update_json_field "$i" "amazon-linux-sha" "$new_al_sha"
+            update="true"
+        fi
+
+        curr_fluentbit_version=$(jq -r ".[$i].linux.\"fluent-bit\"" "$VERSION_FILE")
+        release_fluentbit_version=$(jq -r ".[$i].linux.\"release-fluent-bit\"" "$VERSION_FILE")
+        if [[ "$curr_fluentbit_version" != "$release_fluentbit_version" ]]; then
+            echo "Upgrading to new Fluentbit version."
+            update_json_field "$i" "fluent-bit" "$release_fluentbit_version"
+            update="true"
+        fi
+
+        curr_aws_fb_version=$(jq -r ".[$i].linux.\"version\"" "$VERSION_FILE")
+        release_aws_fb_version=$(jq -r ".[$i].linux.\"release-version\"" "$VERSION_FILE")
+        if [[ "$curr_aws_fb_version" != "$release_aws_fb_version" ]]; then
+            echo "Upgrading to new AWS Fluentbit version."
+            update_json_field "$i" "version" "$release_aws_fb_version"
+            update="true"
+        fi
+    done
+
+    if [[ "$update" = "true" ]]; then
+        git add "$VERSION_FILE"
+        git status
+    fi
+}
+
+main() {
+    check_and_update
 }
 
 trap cleanup EXIT
 
-echo "Before: $(cat linux.version)"
-
-update="false"
-
-# Get indices and iterate
-for i in $(jq 'keys[]' linux.version); do
-    current_sha=$(jq -r ".[$i].linux.\"amazon-linux-sha\"" linux.version)
-    tag=$(jq -r ".[$i].linux.\"al-tag\"" linux.version)
-    echo "Index $i: $current_sha"
-
-    docker pull "public.ecr.aws/amazonlinux/amazonlinux:$tag" 
-    IMAGE_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/amazonlinux/amazonlinux:$tag)
-    echo "$tag Image SHA: $IMAGE_SHA"
-
-    echo "Current Image SHA: $current_sha"
-
-    if [[ "$IMAGE_SHA" == "$current_sha" ]]; then
-        echo "No new base amazon linux image for $tag"
-    else
-        # Modify specific index
-        echo "There is a new base amazon linux image for $tag. Updating linux.version"
-        jq ".[$i].linux.\"amazon-linux-sha\" = \"$IMAGE_SHA\"" linux.version > tmp.json && mv tmp.json linux.version
-        update="true"
-    fi
-
-    curr_fluentbit_version=$(jq -r ".[$i].linux.\"fluent-bit\"" linux.version)
-    next_fluentbit_version=$(jq -r ".[$i].linux.\"release-fluent-bit\"" linux.version)
-    echo "Current fluent bit version: $curr_fluentbit_version"
-    echo "Release fluent bit version: $next_fluentbit_version"
-    if [[ "$curr_fluentbit_version" != "$next_fluentbit_version" ]]; then
-        echo "New fluent bit version upgrade."
-        jq ".[$i].linux.\"fluent-bit\" = \"$next_fluentbit_version\"" linux.version > tmp.json && mv tmp.json linux.version
-        update="true"
-    fi
-
-    curr_aws_fb_version=$(jq -r ".[$i].linux.\"version\"" linux.version)
-    next_aws_fb_version=$(jq -r ".[$i].linux.\"release-version\"" linux.version)
-    echo "Current AWS fluent bit version: $curr_aws_fb_version"
-    echo "Release AWS fluent bit version: $next_aws_fb_version"
-    if [[ "$curr_aws_fb_version" != "$next_aws_fb_version" ]]; then
-        echo "New aws fluent bit version upgrade."
-        jq ".[$i].linux.\"version\" = \"$next_aws_fb_version\"" linux.version > tmp.json && mv tmp.json linux.version
-        update="true"
-    fi
-
-done
-
-echo "After: $(cat linux.version)"
-
-
-if [[ "$update" = "true" ]]; then
-    git status
-    git add linux.version
-    echo "added linux.version"
-    git status
-fi
+main "$@"
