@@ -32,8 +32,9 @@ jobs:
           # Git diff returns exit code of 1 when there is a change staged
           # We need the set statements to prevent erroring out
           set +e
-          git diff --cached --quiet
-          if [[ $? -eq 1 ]]; then echo "stage_exit_code=$?" >> "$GITHUB_OUTPUT" else "stage_exit_code=0" >> "$GITHUB_OUTPUT"; fi
+          diff=${git diff --cached --quiet)
+          echo $diff
+          if [[ $diff -ne 0 ]]; then echo "stage_exit_code=$?" >> "$GITHUB_OUTPUT" else "stage_exit_code=0" >> "$GITHUB_OUTPUT"; fi
           # echo "stage_exit_code=$?" >> "$GITHUB_OUTPUT"
           set -e
       - name: Commit and Push Changes
