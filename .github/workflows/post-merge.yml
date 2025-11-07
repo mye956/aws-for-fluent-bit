@@ -1,0 +1,23 @@
+name: Post-release merge action
+run-name: Post-release merge action
+on:
+    pull_request:
+        types: [closed]
+        branches: [mainline]
+
+jobs:
+    if_merged:
+        if: github.event.pull_request.merged == true && startsWith(github.head_ref, 'release')
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+            - name: Run on merged PR
+              run: echo "PR merged from ${{ github.head_ref }} to ${{ github.base_ref }}"
+            - name: Configure AWS Credentials
+              uses: aws-actions/configure-aws-credentials@v5
+              with:
+                role-to-assume: ${{secrets.TEST_IAM_ROLE_ARN}}
+                aws-region: us-west-2
+            - name: Reset release alarm
+              if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 0 }}
+              run: aws cloudwatch put-metric-data --metric-name FluentBitGithubActionTest --namespace FluentBitReleaseTest --value 0
