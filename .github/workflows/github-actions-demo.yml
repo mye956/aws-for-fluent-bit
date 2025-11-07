@@ -33,7 +33,9 @@ jobs:
           # We need the set statements to prevent erroring out
           set +e
           git diff --cached --quiet
-          if [[ $? -ne 0 ]]; then echo "stage_exit_code=42" >> "$GITHUB_OUTPUT" else "stage_exit_code=0" >> "$GITHUB_OUTPUT"; fi
+          exit_code=$?
+          echo $exit_code
+          if [[ $exit_code -ne 0 ]]; then echo "stage_exit_code=42" >> "$GITHUB_OUTPUT" else "stage_exit_code=0" >> "$GITHUB_OUTPUT"; fi
           set -e
       - name: Commit and Push Changes
         id: push
