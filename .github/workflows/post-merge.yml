@@ -1,10 +1,9 @@
 name: Post-release merge action
 run-name: Post-release merge action
 on:
-    workflow_dispatch:
-    # pull_request:
-    #     types: [closed]
-    #     branches: [github-actions]
+    pull_request:
+        types: [closed]
+        branches: [dummy-main]
 
 jobs:
     if_merged:
