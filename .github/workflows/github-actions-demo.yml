@@ -35,7 +35,7 @@ jobs:
           git diff --cached --quiet
           exit_code=$?
           echo $exit_code
-          if [[ $exit_code -ne 0 ]]; then echo "stage_exit_code=42" >> "$GITHUB_OUTPUT"; else || "stage_exit_code=0" >> "$GITHUB_OUTPUT"; fi
+          if [[ $exit_code -ne 0 ]]; then echo "stage_exit_code=42" >> "$GITHUB_OUTPUT"; else "stage_exit_code=0" >> "$GITHUB_OUTPUT"; fi
           echo 
           set -e
       - name: Commit and Push Changes
