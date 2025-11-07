@@ -63,7 +63,6 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{secrets.TEST_IAM_ROLE_ARN}}
-          role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: us-west-2
       - name: Failure Scenario
         if: ${{ needs.GenerateConfig.result == 'failure' }}
