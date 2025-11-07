@@ -31,11 +31,11 @@ jobs:
           # We need the set statements to prevent erroring out
           set +e
           git diff --cached --quiet
-          echo "stage_exit_code=$?" >> "$GITHUB_OUTPUT"
+          echo "stage_exit_code=42" >> "$GITHUB_OUTPUT"
           set -e
       - name: Commit and Push Changes
         id: push
-        if: ${{ steps.stage.outputs.stage_exit_code == 1 }}
+        if: ${{ steps.stage.outputs.stage_exit_code == 42 }}
         run: |
           date=$(date '+%Y%m%d')
           git status
@@ -45,7 +45,7 @@ jobs:
           echo "push_exit_code=$?" >> "$GITHUB_OUTPUT"
       - name: Open PR for Branch
         id: pr
-        if: ${{ steps.stage.outputs.stage_exit_code == 1 && steps.push.outputs.push_exit_code == 0 }}
+        if: ${{ steps.stage.outputs.stage_exit_code == 42 && steps.push.outputs.push_exit_code == 0 }}
         run: |
           date=$(date '+%Y%m%d')
           gh pr create --base dummy-main --head release-${date} --title "Release ${date}" --body "Dummy Release PR"
@@ -71,7 +71,7 @@ jobs:
           echo "ERROR: Encounter error when checking for new release."
           aws cloudwatch put-metric-data --metric-name FluentBitGithubActionTest --namespace FluentBitReleaseTest --value "-1"
       - name: Release Kickoff Scenario
-        if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 1 }}
+        if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 42 }}
         run: |
           echo "New updates have been detected. Starting release kickoff"
           aws cloudwatch put-metric-data --metric-name FluentBitGithubActionTest --namespace FluentBitReleaseTest --value 1
