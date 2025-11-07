@@ -3,7 +3,7 @@ run-name: Post-release merge action
 on:
     pull_request:
         types: [closed]
-        branches: [mainline]
+        branches: [github-actions]
 
 jobs:
     if_merged:
