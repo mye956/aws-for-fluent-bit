@@ -19,5 +19,4 @@ jobs:
                 role-to-assume: ${{secrets.TEST_IAM_ROLE_ARN}}
                 aws-region: us-west-2
             - name: Reset release alarm
-              if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 0 }}
               run: aws cloudwatch put-metric-data --metric-name FluentBitGithubActionTest --namespace FluentBitReleaseTest --value 0
