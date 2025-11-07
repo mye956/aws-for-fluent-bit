@@ -66,13 +66,13 @@ jobs:
           aws-region: us-west-2
       - name: Failure Scenario
         if: ${{ needs.GenerateConfig.result == 'failure' }}
-        run: aws cloudwatch put-metric-data --metric-name FluentBitReleaseTest --namespace ECSAMIRelease --value "-1"
+        run: aws cloudwatch put-metric-data --metric-name FluentBitGithubActionTest --namespace FluentBitReleaseTest --value "-1"
       - name: Release Kickoff Scenario
         if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 1 }}
-        run: aws cloudwatch put-metric-data --metric-name FluentBitReleaseTest --namespace ECSAMIRelease --value 1
+        run: aws cloudwatch put-metric-data --metric-name FluentBitGithubActionTest --namespace FluentBitReleaseTest --value 1
       - name: No Release Scenario
         if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 0 }}
-        run: aws cloudwatch put-metric-data --metric-name FluentBitReleaseTest --namespace ECSAMIRelease --value 0
+        run: aws cloudwatch put-metric-data --metric-name FluentBitGithubActionTest --namespace FluentBitReleaseTest --value 0
 
     # outputs:
     #   stage_exit_code: ${{ steps.stage.outputs.stage_exit_code }}
