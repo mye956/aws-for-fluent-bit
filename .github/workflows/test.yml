@@ -2,7 +2,7 @@ name: Test
 
 # TODO: We will be changing this to run on a regular scheduled interval once all of the infrastructure has been set up.
 on:
-  workflow_dispatch:
+  push
 
 jobs:
   MetricPublish:
