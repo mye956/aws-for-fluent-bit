@@ -1,0 +1,26 @@
+name: Test
+
+# TODO: We will be changing this to run on a regular scheduled interval once all of the infrastructure has been set up.
+on:
+  workflow_dispatch:
+
+jobs:
+  MetricPublish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          # TODO: Add the role as a secret once infrastructure has been set up.
+          role-to-assume: ${{ secrets.TEST_IAM_ROLE_2_ARN }}
+          aws-region: us-west-2
+      - name: Release Kickoff Scenario
+        run: |
+          # TODO: Cloudwatch metric namespace will need to be created
+          echo "Kicking off new release."
+          aws cloudwatch put-metric-data --metric-name FluentBitGithubActionKickoff --namespace FluentBitRelease --value 1
