@@ -46,6 +46,7 @@ data:
         HTTP_Server   On
         HTTP_Listen   0.0.0.0
         HTTP_Port     2020
+        file_cache_advise   false
         
     @INCLUDE application-log.conf
   
