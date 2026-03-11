@@ -2,8 +2,8 @@
   {
     "linux": {
       "major-version": "2",
-      "version": "2.34.3.20260232",
-      "release-version": "2.34.3.20260232",
+      "version": "2.34.3.20260233",
+      "release-version": "2.34.3.20260233",
       "latest": "true",
       "build": "1",
       "fluent-bit": "1.9.10",
