@@ -1,5 +1,17 @@
 # Changelog
 
+### 3.2.5
+This release includes:
+* Fluent Bit [v4.2.2](https://github.com/fluent/fluent-bit/tree/v4.2.2)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.3
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.10.20260325.0
+
+Compared to the previous release, this release adds:
+* Fix - TODO blah blah [#TODO](https://github.com/amazon-contributing/upstream-to-fluent-bit/pull/TODO)
+* Enhancement - TODO blah blah [#TODO](https://github.com/aws/aws-for-fluent-bit/pull/TODO)
+
 ### 2.34.3.20260309
 * Minimal set of packages installed using Amazon Linux 2 base container image version: 2.0.20260302.0
 
