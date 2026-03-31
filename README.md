@@ -1,4 +1,4 @@
-## AWS for Fluent Bit Docker Image
+## AWS for Fluent Bit Docker Image foobar
 
 Welcome to AWS for Fluent Bit! Before using this Docker Image, please read this README entirely, **especially the section on [Consuming AWS for Fluent Bit versions](#consuming-aws-for-fluent-bit-versions)**
 
