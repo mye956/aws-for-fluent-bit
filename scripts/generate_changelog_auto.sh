@@ -45,10 +45,24 @@ get_version_info() {
     jq -r ".[] | select(.linux.\"major-version\" == \"$major_version\") | .linux.\"$field\"" "$VERSION_FILE"
 }
 
+# Get commit titles since the last "Release XXXX" commit on mainline.
+# These represent changes that will be included in the new release.
+get_commits_since_last_release() {
+    local last_release
+    last_release=$(git -P log --grep="^Release " --format="%H" -1 2>/dev/null || true)
+
+    if [[ -n "$last_release" ]]; then
+        git -P log --format="* %s" "${last_release}..HEAD" 2>/dev/null || true
+    else
+        echo "* (no previous release commit found)"
+    fi
+}
+
 # Generate a single changelog entry for a major version
 generate_entry() {
     local major_version="$1"
     local al_version="$2"
+    local commits="$3"
 
     local version fluent_bit cw_plugin kinesis_plugin firehose_plugin al_tag
     version=$(get_version_info "$major_version" "version")
@@ -75,8 +89,7 @@ This release includes:
 * $al_description
 
 Compared to the previous release, this release adds:
-* Fix - TODO blah blah [#TODO](https://github.com/amazon-contributing/upstream-to-fluent-bit/pull/TODO)
-* Enhancement - TODO blah blah [#TODO](https://github.com/aws/aws-for-fluent-bit/pull/TODO)
+$commits
 
 EOF
 }
@@ -97,6 +110,12 @@ main() {
     local al_images_response
     al_images_response=$(fetch_all_al_images)
 
+    # Get commits since the last release (shared across all entries)
+    local commits
+    commits=$(get_commits_since_last_release)
+    echo "Commits since last release:" >&2
+    echo "$commits" >&2
+
     # Build all new entries into a single string
     local new_entries=""
     for major_version in $publish_versions; do
@@ -106,7 +125,7 @@ main() {
         al_version=$(get_latest_al_version "$al_images_response" "$al_tag")
 
         echo "Generating changelog entry for major version $major_version (AL $al_tag: $al_version)" >&2
-        new_entries+=$(generate_entry "$major_version" "$al_version")
+        new_entries+=$(generate_entry "$major_version" "$al_version" "$commits")
         new_entries+=$'\n'
     done
 
