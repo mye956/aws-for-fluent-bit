@@ -45,17 +45,47 @@ get_version_info() {
     jq -r ".[] | select(.linux.\"major-version\" == \"$major_version\") | .linux.\"$field\"" "$VERSION_FILE"
 }
 
-# Get commit titles since the last "Release XXXX" commit on mainline.
-# These represent changes that will be included in the new release.
-get_commits_since_last_release() {
-    local last_release
-    last_release=$(git -P log --grep="^Release " --format="%H" -1 2>/dev/null || true)
+# Get PR titles merged since the last "Release XXXX" commit.
+# Uses the GitHub CLI (gh) to query merged PRs by date, falling back
+# to git log if gh is unavailable.
+get_changes_since_last_release() {
+    local last_release_date
+    last_release_date=$(git -P log --grep="^Release " --format="%aI" -1 2>/dev/null || true)
 
-    if [[ -n "$last_release" ]]; then
-        git -P log --format="* %s" "${last_release}..HEAD" 2>/dev/null || true
-    else
+    if [[ -z "$last_release_date" ]]; then
         echo "* (no previous release commit found)"
+        return
     fi
+
+    echo "Last release commit date: $last_release_date" >&2
+
+    # Use GitHub CLI if available to get merged PR titles
+    if command -v gh &>/dev/null; then
+        local repo
+        repo=$(gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null || true)
+
+        if [[ -n "$repo" ]]; then
+            local pr_titles
+            pr_titles=$(gh pr list \
+                --repo "$repo" \
+                --state merged \
+                --search "merged:>=${last_release_date}" \
+                --json title,number,mergedAt \
+                --jq '.[] | "* \(.title) [#\(.number)](https://github.com/'"$repo"'/pull/\(.number))"' \
+                2>/dev/null || true)
+
+            if [[ -n "$pr_titles" ]]; then
+                echo "$pr_titles"
+                return
+            fi
+        fi
+    fi
+
+    # Fallback: use git log commit subjects
+    echo "Falling back to git log for change list." >&2
+    local last_release_hash
+    last_release_hash=$(git -P log --grep="^Release " --format="%H" -1 2>/dev/null || true)
+    git -P log --format="* %s" "${last_release_hash}..HEAD" 2>/dev/null || true
 }
 
 # Generate a single changelog entry for a major version
@@ -110,10 +140,10 @@ main() {
     local al_images_response
     al_images_response=$(fetch_all_al_images)
 
-    # Get commits since the last release (shared across all entries)
+    # Get merged PR titles since the last release (shared across all entries)
     local commits
-    commits=$(get_commits_since_last_release)
-    echo "Commits since last release:" >&2
+    commits=$(get_changes_since_last_release)
+    echo "Changes since last release:" >&2
     echo "$commits" >&2
 
     # Build all new entries into a single string
