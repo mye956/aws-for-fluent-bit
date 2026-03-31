@@ -55,6 +55,8 @@ get_changes_since_last_release() {
 		--limit 1 \
 		--json mergedAt \
 		--jq '.[0].mergedAt' 2>/dev/null || true)
+    
+    last_release_merged_at="2026-03-13T20:57:05Z"
 
 	if [ -z "$last_release_merged_at" ] || [ "$last_release_merged_at" = "null" ]; then
 		echo "WARNING: Could not find last release PR merge timestamp" >&2
