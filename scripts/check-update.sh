@@ -139,6 +139,7 @@ check_and_update() {
 			any_version_updated="true"
 
 			if [[ "$latest" = true ]]; then
+				echo "Updating stable version to $release_aws_fb_version"
 				echo "$release_aws_fb_version" >"$STABLE_VERSION_FILE"
 			fi
 		elif [[ "$os_updated" == "true" || "$fluentbit_updated" == "true" ]]; then
@@ -151,6 +152,7 @@ check_and_update() {
 			any_version_updated="true"
 
 			if [[ "$latest" = true ]]; then
+				echo "Updating stable version to $release_aws_fb_version"
 				echo "$release_aws_fb_version" >"$STABLE_VERSION_FILE"
 			fi
 		else
