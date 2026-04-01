@@ -152,8 +152,8 @@ check_and_update() {
 			any_version_updated="true"
 
 			if [[ "$latest" = true ]]; then
-				echo "Updating stable version to $release_aws_fb_version"
-				echo "$release_aws_fb_version" >"$STABLE_VERSION_FILE"
+				echo "Updating stable version to $new_aws_fb_version"
+				echo "$new_aws_fb_version" >"$STABLE_VERSION_FILE"
 			fi
 		else
 			update_json_field "$i" "publish" "false"
