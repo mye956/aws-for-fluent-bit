@@ -1,5 +1,33 @@
 # Changelog
 
+### 2.34.3.20260401
+This release includes:
+* Fluent Bit [v1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.3
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux 2 base container image version: 2.0.20260302.0
+
+Compared to the previous release, this release adds:
+* bugfix: Match AWS fluent bit version with current and version to be released [#1088](https://github.com/aws/aws-for-fluent-bit/pull/1088)
+* Create manifests for debug tags in image build [#1083](https://github.com/aws/aws-for-fluent-bit/pull/1083)
+* enhancement: adjust image tagging during release [#1082](https://github.com/aws/aws-for-fluent-bit/pull/1082)
+* enhancement: run initiate-release on a weekday schedule [#1076](https://github.com/aws/aws-for-fluent-bit/pull/1076)
+
+### 3.2.5
+This release includes:
+* Fluent Bit [v4.2.2](https://github.com/fluent/fluent-bit/tree/v4.2.2)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.3
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.10.20260325.0
+
+Compared to the previous release, this release adds:
+* bugfix: Match AWS fluent bit version with current and version to be released [#1088](https://github.com/aws/aws-for-fluent-bit/pull/1088)
+* Create manifests for debug tags in image build [#1083](https://github.com/aws/aws-for-fluent-bit/pull/1083)
+* enhancement: adjust image tagging during release [#1082](https://github.com/aws/aws-for-fluent-bit/pull/1082)
+* enhancement: run initiate-release on a weekday schedule [#1076](https://github.com/aws/aws-for-fluent-bit/pull/1076)
+
 ### 2.34.3.20260309
 * Minimal set of packages installed using Amazon Linux 2 base container image version: 2.0.20260302.0
 
