@@ -3,6 +3,7 @@ set -euo pipefail
 
 readonly VERSION_FILE="linux.version"
 readonly ECR_REPO="public.ecr.aws/amazonlinux/amazonlinux"
+readonly STABLE_VERSION_FILE="AWS_FOR_FLUENT_BIT_STABLE_VERSION"
 
 # List of docker tags that we want to clean up after
 tags_to_cleanup=()
@@ -18,6 +19,12 @@ cleanup() {
 update_json_field() {
 	local key="$1" field="$2" value="$3"
 	jq ".[$key].linux.\"$field\" = \"$value\"" "$VERSION_FILE" >tmp.json && mv tmp.json "$VERSION_FILE"
+}
+
+update_stable_version() {
+	version="$1"
+
+	echo "$version" >"$STABLE_VERSION_FILE"
 }
 
 # Compute the next AWS for Fluent Bit version based on the type of change.
@@ -92,6 +99,7 @@ check_and_update() {
 		current_sha=$(jq -r ".[$i].linux.\"os-digest\"" "$VERSION_FILE")
 		tag=$(jq -r ".[$i].linux.\"al-tag\"" "$VERSION_FILE")
 		major_version=$(jq -r ".[$i].linux.\"major-version\"" "$VERSION_FILE")
+		latest=$(jq -r ".[$i].linux.\"latest\"" "$VERSION_FILE")
 
 		if ! docker pull "${ECR_REPO}:$tag"; then
 			echo "Warning: Failed to pull ${ECR_REPO}:$tag" >&2
@@ -129,6 +137,10 @@ check_and_update() {
 			update_json_field "$i" "version" "$release_aws_fb_version"
 			update_json_field "$i" "publish" "true"
 			any_version_updated="true"
+
+			if [[ "$latest" = true ]]; then
+				echo "$release_aws_fb_version" >"$STABLE_VERSION_FILE"
+			fi
 		elif [[ "$os_updated" == "true" || "$fluentbit_updated" == "true" ]]; then
 			# Auto-compute version from upstream changes
 			new_aws_fb_version=$(compute_new_version "$curr_aws_fb_version" "$major_version" "$os_updated" "$fluentbit_updated" "$curr_fluentbit_version" "$release_fluentbit_version")
@@ -137,6 +149,10 @@ check_and_update() {
 			update_json_field "$i" "release-version" "$new_aws_fb_version"
 			update_json_field "$i" "publish" "true"
 			any_version_updated="true"
+
+			if [[ "$latest" = true ]]; then
+				echo "$release_aws_fb_version" >"$STABLE_VERSION_FILE"
+			fi
 		else
 			update_json_field "$i" "publish" "false"
 		fi
@@ -144,7 +160,7 @@ check_and_update() {
 
 	# Only stage changes if at least one version was updated
 	if [[ "$any_version_updated" = "true" ]]; then
-		git add "$VERSION_FILE"
+		git add "$VERSION_FILE" "$STABLE_VERSION_FILE"
 
 		# Generate and prepend new changelog entries
 		SCRIPTS_DIR="$(dirname "${BASH_SOURCE[0]}")"
