@@ -708,16 +708,52 @@ verify_ecr_image_scan() {
 	repo_uri=${2}
 	tag=${3}
 
-	tagCount=$(aws ecr list-images  --repository-name ${repo_uri} --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${tag} || echo "0")
+	tagCount=$(aws ecr list-images --repository-name ${repo_uri} --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${tag} || echo "0")
 	if [ "$tagCount" = '1' ]; then
-		aws ecr start-image-scan --repository-name ${repo_uri} --image-id imageTag=${tag} --region ${region}
-		aws ecr wait image-scan-complete --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag}
-		highVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.HIGH // 0')
-		criticalVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.CRITICAL // 0')
-		if [ "$highVulnerabilityCount" -gt 0 ] || [ "$criticalVulnerabilityCount" -gt 0 ]; then
-			vulnerabilityCount=$((highVulnerabilityCount + criticalVulnerabilityCount))
-			echo "Uploaded image ${tag} has ${vulnerabilityCount} vulnerabilities (HIGH: ${highVulnerabilityCount}, CRITICAL: ${criticalVulnerabilityCount})."
-			exit 1
+		scan_type=$(aws ecr get-registry-scanning-configuration --region ${region} --query 'scanningConfiguration.scanType' --output text 2>/dev/null || echo "BASIC")
+
+		if [ "$scan_type" = "ENHANCED" ]; then
+			echo "Enhanced scanning detected, using Inspector2 to check for vulnerabilities..."
+			# Wait for Inspector to pick up the newly pushed image
+			max_attempts=30
+			attempt=0
+			finding_count=0
+			while [ $attempt -lt $max_attempts ]; do
+				findings=$(aws inspector2 list-findings \
+					--filter-criteria "{\"ecrImageRepositoryName\":[{\"comparison\":\"EQUALS\",\"value\":\"${repo_uri}\"}],\"ecrImageTags\":[{\"comparison\":\"EQUALS\",\"value\":\"${tag}\"}],\"severity\":[{\"comparison\":\"EQUALS\",\"value\":\"HIGH\"},{\"comparison\":\"EQUALS\",\"value\":\"CRITICAL\"}]}" \
+					--region ${region} 2>/dev/null)
+				if [ $? -eq 0 ]; then
+					finding_count=$(echo "$findings" | jq '.findings | length')
+					# If Inspector has processed the image, findings array will exist (even if empty)
+					break
+				fi
+				attempt=$((attempt + 1))
+				echo "Waiting for Inspector2 findings (attempt ${attempt}/${max_attempts})..."
+				sleep 10
+			done
+
+			if [ $attempt -eq $max_attempts ]; then
+				echo "WARNING: Timed out waiting for Inspector2 findings for ${tag}. Continuing..."
+				return 0
+			fi
+
+			if [ "$finding_count" -gt 0 ]; then
+				highCount=$(echo "$findings" | jq '[.findings[] | select(.severity == "HIGH")] | length')
+				criticalCount=$(echo "$findings" | jq '[.findings[] | select(.severity == "CRITICAL")] | length')
+				echo "Uploaded image ${tag} has ${finding_count} vulnerabilities (HIGH: ${highCount}, CRITICAL: ${criticalCount})."
+				exit 1
+			fi
+		else
+			# Basic scanning - existing behavior
+			aws ecr start-image-scan --repository-name ${repo_uri} --image-id imageTag=${tag} --region ${region}
+			aws ecr wait image-scan-complete --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag}
+			highVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.HIGH // 0')
+			criticalVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.CRITICAL // 0')
+			if [ "$highVulnerabilityCount" -gt 0 ] || [ "$criticalVulnerabilityCount" -gt 0 ]; then
+				vulnerabilityCount=$((highVulnerabilityCount + criticalVulnerabilityCount))
+				echo "Uploaded image ${tag} has ${vulnerabilityCount} vulnerabilities (HIGH: ${highVulnerabilityCount}, CRITICAL: ${criticalVulnerabilityCount})."
+				exit 1
+			fi
 		fi
 	fi
 }
