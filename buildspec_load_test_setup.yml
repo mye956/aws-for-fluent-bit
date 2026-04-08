@@ -14,7 +14,7 @@ phases:
       nodejs: 22
   pre_build:
     commands:
-      - echo Running the load tests
+      - echo Setting up load test resources
       # upgrade node version
       - npm install -g n
       - n stable
@@ -53,12 +53,11 @@ phases:
           echo "BUILD_VERSION is set to: $BUILD_VERSION"
         fi
       - |
-        # Check if publishing is enabled for this BUILD_VERSION
         PUBLISH_ENABLED=$(./scripts/get_linux_version.sh "$BUILD_VERSION" "publish")
         echo "Publish enabled for BUILD_VERSION=${BUILD_VERSION}? ${PUBLISH_ENABLED}"
 
         if [ "${PUBLISH_ENABLED}" = "false" ]; then
-            echo "Publishing is disabled for BUILD_VERSION=${BUILD_VERSION}, skipping load tests"
+            echo "Publishing is disabled for BUILD_VERSION=${BUILD_VERSION}, skipping setup"
         else
             # Set stack names based on BUILD_VERSION.
             # Do not add BUILD_VERSION for BUILD_VERSION=2 to make load test work with existing resources.
@@ -76,11 +75,11 @@ phases:
             echo "Using LOG_STORAGE_STACK_NAME: $LOG_STORAGE_STACK_NAME"
             echo "Using EKS_CLUSTER_NAME: $EKS_CLUSTER_NAME"
 
-            # Execute load test commands (common logic for all supported BUILD_VERSIONs)
+            # Execute setup commands (common logic for all supported BUILD_VERSIONs)
             if [ "$BUILD_VERSION" = "2" ] || [ "$BUILD_VERSION" = "3" ]; then
               # need this for multiline code blocks to raise any errors to codebuild
               set -e
-              echo "Running load tests for AWS for Fluent Bit version $BUILD_VERSION"
+              echo "Creating test resources for AWS for Fluent Bit version $BUILD_VERSION"
               
               # Activate Python virtual environment and install the AWS CDK core dependencies
               python -m venv venv
@@ -91,11 +90,15 @@ phases:
                 aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
               fi
 
-              # Resolve stack outputs into environment variables (no assumed role needed)
-              source ./load_tests/setup_test_environment.sh
+              CREDS=$(aws sts assume-role --role-arn $LOAD_TEST_CFN_ROLE_ARN --role-session-name load-test-cfn --duration-seconds 3600)
+              export CREDS
+              export AWS_ACCESS_KEY_ID=$(echo "${CREDS}" | jq -r '.Credentials.AccessKeyId')
+              export AWS_SECRET_ACCESS_KEY=$(echo "${CREDS}" | jq -r '.Credentials.SecretAccessKey')
+              export AWS_SESSION_TOKEN=$(echo "${CREDS}" | jq -r '.Credentials.SessionToken')
 
-              # Run load tests on corresponding platform
-              python ./load_tests/load_test.py ${PLATFORM}
+              python ./load_tests/load_test.py create_testing_resources
+
+              echo "Test resources created successfully"
             else
               echo "Unsupported BUILD_VERSION: $BUILD_VERSION"
               echo "Supported versions are: 2, 3"

@@ -632,6 +632,21 @@ elif sys.argv[1] == 'ECS':
 elif sys.argv[1] == 'EKS':
     run_eks_tests()
 elif sys.argv[1] == 'delete_testing_resources':
-    # testing resources only need to be deleted once
+    # Always clean up test data (S3 objects, CW log retention) for all plugins
+    # to prevent stale data from interfering with subsequent test runs
+    session = get_sts_boto_session()
+    delete_testing_data(session)
+
+    # CloudFormation stack and EKS cluster only need to be torn down once,
+    # and only for CloudWatch (other plugins share the log storage stack
+    # which is managed separately)
     if OUTPUT_PLUGIN == 'cloudwatch':
-        delete_testing_resources()
+        print(f"Deleting cloudformation stack. stackName={TESTING_RESOURCES_STACK_NAME}", flush=True)
+        client = session.client('cloudformation')
+        client.delete_stack(
+            StackName=TESTING_RESOURCES_STACK_NAME
+        )
+        if PLATFORM == 'eks':
+            print("Scaling down EKS cluster", flush=True)
+            os.system('kubectl delete namespace load-test-fluent-bit-eks-ns')
+            os.system(f'eksctl scale nodegroup --cluster={EKS_CLUSTER_NAME} --nodes=0 ng')

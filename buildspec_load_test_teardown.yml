@@ -14,7 +14,7 @@ phases:
       nodejs: 22
   pre_build:
     commands:
-      - echo Running the load tests
+      - echo Tearing down load test resources
       # upgrade node version
       - npm install -g n
       - n stable
@@ -58,7 +58,7 @@ phases:
         echo "Publish enabled for BUILD_VERSION=${BUILD_VERSION}? ${PUBLISH_ENABLED}"
 
         if [ "${PUBLISH_ENABLED}" = "false" ]; then
-            echo "Publishing is disabled for BUILD_VERSION=${BUILD_VERSION}, skipping load tests"
+            echo "Publishing is disabled for BUILD_VERSION=${BUILD_VERSION}, skipping teardown"
         else
             # Set stack names based on BUILD_VERSION.
             # Do not add BUILD_VERSION for BUILD_VERSION=2 to make load test work with existing resources.
@@ -76,11 +76,11 @@ phases:
             echo "Using LOG_STORAGE_STACK_NAME: $LOG_STORAGE_STACK_NAME"
             echo "Using EKS_CLUSTER_NAME: $EKS_CLUSTER_NAME"
 
-            # Execute load test commands (common logic for all supported BUILD_VERSIONs)
+            # Execute teardown commands (common logic for all supported BUILD_VERSIONs)
             if [ "$BUILD_VERSION" = "2" ] || [ "$BUILD_VERSION" = "3" ]; then
               # need this for multiline code blocks to raise any errors to codebuild
               set -e
-              echo "Running load tests for AWS for Fluent Bit version $BUILD_VERSION"
+              echo "Deleting test resources for AWS for Fluent Bit version $BUILD_VERSION"
               
               # Activate Python virtual environment and install the AWS CDK core dependencies
               python -m venv venv
@@ -91,11 +91,13 @@ phases:
                 aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
               fi
 
-              # Resolve stack outputs into environment variables (no assumed role needed)
+              # Resolve stack outputs so load_test.py has the env vars it needs
               source ./load_tests/setup_test_environment.sh
 
-              # Run load tests on corresponding platform
-              python ./load_tests/load_test.py ${PLATFORM}
+              # Delete testing resources
+              python ./load_tests/load_test.py delete_testing_resources
+
+              echo "Test resources deleted successfully"
             else
               echo "Unsupported BUILD_VERSION: $BUILD_VERSION"
               echo "Supported versions are: 2, 3"
