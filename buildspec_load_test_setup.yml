@@ -96,7 +96,8 @@ phases:
               export AWS_SECRET_ACCESS_KEY=$(echo "${CREDS}" | jq -r '.Credentials.SecretAccessKey')
               export AWS_SESSION_TOKEN=$(echo "${CREDS}" | jq -r '.Credentials.SessionToken')
 
-              python ./load_tests/load_test.py create_testing_resources
+              # Create all testing resources for all output plugins at once
+              python ./load_tests/load_test.py create_all_testing_resources
 
               echo "Test resources created successfully"
             else

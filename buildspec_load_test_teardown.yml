@@ -94,8 +94,8 @@ phases:
               # Resolve stack outputs so load_test.py has the env vars it needs
               source ./load_tests/setup_test_environment.sh
 
-              # Delete testing resources
-              python ./load_tests/load_test.py delete_testing_resources
+              # Delete all testing resources for all output plugins at once
+              python ./load_tests/load_test.py delete_all_testing_resources
 
               echo "Test resources deleted successfully"
             else

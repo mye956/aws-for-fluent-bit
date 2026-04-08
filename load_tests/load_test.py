@@ -233,6 +233,55 @@ def create_testing_resources():
         os.chdir(f'./load_tests/{sys.argv[1]}/{PLATFORM}')
         os.system('cdk deploy --require-approval never')
 
+# Create all testing resources in a single setup job.
+# Deploys the testing resources CDK stack (ECS cluster + CW log group, or CW log group for EKS)
+# and scales up EKS nodes if on EKS platform.
+# The log storage stack (S3/Kinesis/Firehose) is assumed to already exist.
+def create_all_testing_resources():
+    session = get_sts_boto_session()
+
+    # Scale up EKS cluster if on EKS platform
+    if PLATFORM == 'eks':
+        print("Scaling up EKS cluster", flush=True)
+        os.system(f'eksctl scale nodegroup --cluster={EKS_CLUSTER_NAME} --nodes={NUM_OF_EKS_NODES} ng')
+        while True:
+            __sleep(90, "Waiting for EKS cluster nodes")
+            number_of_nodes = subprocess.getoutput("kubectl get nodes --no-headers=true | wc -l")
+            if(int(number_of_nodes) == NUM_OF_EKS_NODES):
+                break
+        # create namespace
+        os.system('kubectl apply -f ./load_tests/create_testing_resources/eks/namespace.yaml')
+
+    # Deploy the testing resources CDK stack
+    print(f"Deploying testing resources CDK stack for platform={PLATFORM}", flush=True)
+    os.chdir(f'./load_tests/create_testing_resources/{PLATFORM}')
+    os.system('cdk deploy --require-approval never')
+    print("All testing resources created successfully", flush=True)
+
+# Delete all testing resources in a single teardown job.
+# Cleans up test data (S3 objects, CW log retention), deletes the testing resources
+# CFN stack, and scales down EKS nodes if on EKS platform.
+def delete_all_testing_resources():
+    session = get_sts_boto_session()
+
+    # Clean up test data for all plugins
+    delete_testing_data(session)
+
+    # Delete the testing resources CloudFormation stack
+    print(f"Deleting cloudformation stack. stackName={TESTING_RESOURCES_STACK_NAME}", flush=True)
+    client = session.client('cloudformation')
+    client.delete_stack(
+        StackName=TESTING_RESOURCES_STACK_NAME
+    )
+
+    # Scale down EKS cluster if on EKS platform
+    if PLATFORM == 'eks':
+        print("Scaling down EKS cluster", flush=True)
+        os.system('kubectl delete namespace load-test-fluent-bit-eks-ns')
+        os.system(f'eksctl scale nodegroup --cluster={EKS_CLUSTER_NAME} --nodes=0 ng')
+
+    print("All testing resources deleted successfully", flush=True)
+
 # this function will log the state of the task at each iteration
 # to help debug
 def wait_ecs_tasks(ecs_cluster_name, task_arn):
@@ -627,10 +676,14 @@ def get_sts_boto_session():
 
 if sys.argv[1] == 'create_testing_resources':
     create_testing_resources()
+elif sys.argv[1] == 'create_all_testing_resources':
+    create_all_testing_resources()
 elif sys.argv[1] == 'ECS':
     run_ecs_tests()
 elif sys.argv[1] == 'EKS':
     run_eks_tests()
+elif sys.argv[1] == 'delete_all_testing_resources':
+    delete_all_testing_resources()
 elif sys.argv[1] == 'delete_testing_resources':
     # Always clean up test data (S3 objects, CW log retention) for all plugins
     # to prevent stale data from interfering with subsequent test runs
