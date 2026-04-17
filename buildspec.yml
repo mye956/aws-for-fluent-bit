@@ -19,7 +19,7 @@ phases:
   build:
     commands:
       # Execute the build script which handles both BUILD_VERSION 2 and 3
-      - echo "this is a test"
+      - echo "this is another test"
 
 artifacts:
   files:
